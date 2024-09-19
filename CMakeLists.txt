@@ -16,8 +16,4 @@ target_sources(uvtester
         uvfault.cpp
         uvfault.hpp
 )
-target_compile_options(uvtester
-    PRIVATE
-        $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -Werror=shadow -Werror=return-type -fno-strict-aliasing>
-)
 target_link_libraries(uvtester PRIVATE asmjit)

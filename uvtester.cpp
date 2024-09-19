@@ -30,9 +30,9 @@ static cxxopts::Options make_options() {
     auto g = opt.add_options();
     g("method", "instruction type", cxxopts::value<InstructionType>()->default_value("imul"));
     g("depth", "faulting instruction depth per half iteration", cxxopts::value<int>()->default_value("4"));
-    g("iters", "iteration count per check", cxxopts::value<uint32_t>()->default_value("100"));
+    g("iters", "iteration count per check", cxxopts::value<uint32_t>()->default_value("10"));
     g("pausedepth", "pause depth per check", cxxopts::value<int>()->default_value("0"));
-    g("passes", "number of iterated passes per sleep", cxxopts::value<long long>()->default_value("5000"));
+    g("passes", "number of iterated passes per sleep", cxxopts::value<long long>()->default_value("25000"));
     g("sleep", "sleep time in milliseconds", cxxopts::value<int>()->default_value("1"));
     g("measure", "measure time of main loops", cxxopts::value<int>()->default_value("0"));
     return opt;

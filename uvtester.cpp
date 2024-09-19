@@ -7,9 +7,16 @@
 #include <cxxopts.hpp>
 #include "uvfault.hpp"
 
-enum class InstructionType { Imul, Max };
+enum class InstructionType {
+    Imul,
+    Aesenc,
+    Max,
+};
 
-static const char *instruction_types[static_cast<int>(InstructionType::Max)] = {"imul"};
+static const char *instruction_types[static_cast<int>(InstructionType::Max)] = {
+    "imul",
+    "aesenc",
+};
 
 void parse_value([[maybe_unused]] const std::string &text, InstructionType &value) {
     value = InstructionType::Imul;
@@ -38,7 +45,7 @@ static cxxopts::Options make_options() {
     return opt;
 }
 
-void doit(const Args &args) {
+static void doit(const Args &args) {
     std::random_device rd;
     std::mt19937_64 gen(rd());
     std::uniform_int_distribution<int64_t> distr(INT64_MIN, INT64_MAX);
@@ -63,10 +70,7 @@ void doit(const Args &args) {
                 total = 0;
         }
         for (long long i = 0; i < args.passes; i++) {
-            int64_t seed;
-            do {
-                seed = distr(gen);
-            } while (seed >= -1 && seed <= 1);
+            auto seed = distr(gen);
             auto res = fn(seed, args.iters);
             if (res)
                 printf("bad result %" PRId64 "x\n", res);

@@ -22,7 +22,7 @@ struct Args {
     int pausedepth;
     long long passes;
     int sleep;
-    bool measure;
+    int measure;
 };
 
 static cxxopts::Options make_options() {
@@ -34,7 +34,7 @@ static cxxopts::Options make_options() {
     g("pausedepth", "pause depth per check", cxxopts::value<int>()->default_value("0"));
     g("passes", "number of iterated passes per sleep", cxxopts::value<long long>()->default_value("5000"));
     g("sleep", "sleep time in milliseconds", cxxopts::value<int>()->default_value("1"));
-    g("measure", "measure main loop time", cxxopts::value<bool>());
+    g("measure", "measure time of main loops", cxxopts::value<int>()->default_value("0"));
     return opt;
 }
 
@@ -53,8 +53,15 @@ void doit(const Args &args) {
     if (err)
         throw AsmException(err);
 
+    long long avg;
+    int loopit = 0;
     while (1) {
-        auto begin = std::chrono::high_resolution_clock::now();
+        std::chrono::high_resolution_clock::time_point begin;
+        if (args.measure) {
+            begin = std::chrono::high_resolution_clock::now();
+            if (loopit % args.measure == 0)
+                avg = 0;
+        }
         for (long long i = 0; i < args.passes; i++) {
             int64_t seed;
             do {
@@ -66,7 +73,11 @@ void doit(const Args &args) {
         }
         if (args.measure) {
             auto tm = std::chrono::high_resolution_clock::now() - begin;
-            printf("sleeping %lld us\n", std::chrono::duration_cast<std::chrono::microseconds>(tm).count());
+            auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(tm).count();
+            avg += usecs;
+            if (loopit % args.measure == args.measure - 1)
+                printf("total %lld us\n", avg);
+            loopit++;
         }
         if (args.sleep)
             std::this_thread::sleep_for(std::chrono::milliseconds(args.sleep));
@@ -90,7 +101,9 @@ int main(int argc, char **argv) {
         args.sleep = argm["sleep"].as<int>();
         if (args.sleep < 0)
             throw std::invalid_argument("sleep");
-        args.measure = argm.count("measure");
+        args.measure = argm["measure"].as<int>();
+        if (args.measure < 0)
+            throw std::invalid_argument("sleep");
     } catch (const std::exception &ex) {
         printf("%s\n", ex.what());
         auto h = opts.help();
@@ -103,7 +116,7 @@ int main(int argc, char **argv) {
     printf("pausedepth:\t%d\n", args.pausedepth);
     printf("passes:\t\t%lld\n", args.passes);
     printf("sleep:\t\t%d\n", args.sleep);
-    printf("measure:\t%s\n", args.measure ? "true" : "false");
+    printf("measure:\t%d\n", args.measure);
 
     doit(args);
     return 0;

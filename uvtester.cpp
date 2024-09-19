@@ -22,6 +22,7 @@ struct Args {
     int pausedepth;
     long long passes;
     int sleep;
+    bool measure;
 };
 
 static cxxopts::Options make_options() {
@@ -31,8 +32,9 @@ static cxxopts::Options make_options() {
     g("depth", "faulting instruction depth per half iteration", cxxopts::value<int>()->default_value("4"));
     g("iters", "iteration count per check", cxxopts::value<uint32_t>()->default_value("100"));
     g("pausedepth", "pause depth per check", cxxopts::value<int>()->default_value("0"));
-    g("passes", "number of iterated passes per sleep", cxxopts::value<long long>()->default_value("1000000000"));
+    g("passes", "number of iterated passes per sleep", cxxopts::value<long long>()->default_value("5000"));
     g("sleep", "sleep time in milliseconds", cxxopts::value<int>()->default_value("1"));
+    g("measure", "measure main loop time", cxxopts::value<bool>());
     return opt;
 }
 
@@ -52,6 +54,7 @@ void doit(const Args &args) {
         throw AsmException(err);
 
     while (1) {
+        auto begin = std::chrono::high_resolution_clock::now();
         for (long long i = 0; i < args.passes; i++) {
             int64_t seed;
             do {
@@ -60,6 +63,10 @@ void doit(const Args &args) {
             auto res = fn(seed, args.iters);
             if (res)
                 printf("bad result %" PRId64 "x\n", res);
+        }
+        if (args.measure) {
+            auto tm = std::chrono::high_resolution_clock::now() - begin;
+            printf("sleeping %lld us\n", std::chrono::duration_cast<std::chrono::microseconds>(tm).count());
         }
         if (args.sleep)
             std::this_thread::sleep_for(std::chrono::milliseconds(args.sleep));
@@ -83,6 +90,7 @@ int main(int argc, char **argv) {
         args.sleep = argm["sleep"].as<int>();
         if (args.sleep < 0)
             throw std::invalid_argument("sleep");
+        args.measure = argm.count("measure");
     } catch (const std::exception &ex) {
         printf("%s\n", ex.what());
         auto h = opts.help();
@@ -95,6 +103,7 @@ int main(int argc, char **argv) {
     printf("pausedepth:\t%d\n", args.pausedepth);
     printf("passes:\t\t%lld\n", args.passes);
     printf("sleep:\t\t%d\n", args.sleep);
+    printf("measure:\t%s\n", args.measure ? "true" : "false");
 
     doit(args);
     return 0;

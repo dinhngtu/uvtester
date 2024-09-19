@@ -1,9 +1,10 @@
+#include <cstdio>
+#include <cinttypes>
 #include <chrono>
 #include <thread>
 #include <random>
 #include <stdexcept>
 #include <cxxopts.hpp>
-#include <fmt/format.h>
 #include "uvfault.hpp"
 
 enum class InstructionType { Imul, Max };
@@ -58,7 +59,7 @@ void doit(const Args &args) {
             } while (seed >= -1 && seed <= 1);
             auto res = fn(rand(), args.iters);
             if (res)
-                fmt::print("bad result {:x}\n", res);
+                printf("bad result %" PRId64 "x\n", res);
         }
         if (args.sleep)
             std::this_thread::sleep_for(std::chrono::milliseconds(args.sleep));
@@ -83,16 +84,17 @@ int main(int argc, char **argv) {
         if (args.sleep < 0)
             throw std::invalid_argument("sleep");
     } catch (const std::exception &ex) {
-        fmt::print("{}\n", ex.what());
-        fmt::print("{}\n", opts.help());
+        printf("%s\n", ex.what());
+        auto h = opts.help();
+        printf("%s\n", h.c_str());
         return 1;
     }
-    fmt::print("method:\t\t{}\n", instruction_types[static_cast<int>(args.method)]);
-    fmt::print("depth:\t\t{}\n", args.depth);
-    fmt::print("iters:\t\t{}\n", args.iters);
-    fmt::print("pausedepth:\t{}\n", args.pausedepth);
-    fmt::print("passes:\t\t{}\n", args.passes);
-    fmt::print("sleep:\t\t{}\n", args.sleep);
+    printf("method:\t\t%s\n", instruction_types[static_cast<int>(args.method)]);
+    printf("depth:\t\t%d\n", args.depth);
+    printf("iters:\t\t%" PRIu32 "\n", args.iters);
+    printf("pausedepth:\t%d\n", args.pausedepth);
+    printf("passes:\t\t%ld\n", args.passes);
+    printf("sleep:\t\t%d\n", args.sleep);
 
     doit(args);
     return 0;

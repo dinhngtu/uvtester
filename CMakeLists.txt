@@ -4,7 +4,6 @@ project(uvtester CXX)
 
 find_package(asmjit REQUIRED)
 find_package(cxxopts REQUIRED)
-find_package(fmt REQUIRED)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CXX_STANDARD_REQUIRED ON)
@@ -21,4 +20,4 @@ target_compile_options(uvtester
     PRIVATE
         $<$<COMPILE_LANGUAGE:CXX>:-Wall -Wextra -Werror=shadow -Werror=return-type -fno-strict-aliasing>
 )
-target_link_libraries(uvtester PRIVATE asmjit fmt)
+target_link_libraries(uvtester PRIVATE asmjit)

@@ -9,17 +9,25 @@
 
 enum class InstructionType {
     Imul,
+    ImulImm,
     Aesenc,
     Max,
 };
 
 static const char *instruction_types[static_cast<int>(InstructionType::Max)] = {
     "imul",
+    "imul_imm",
     "aesenc",
 };
 
 void parse_value([[maybe_unused]] const std::string &text, InstructionType &value) {
-    value = InstructionType::Imul;
+    for (int i = 0; i < static_cast<int>(InstructionType::Max); i++) {
+        if (text == instruction_types[i]) {
+            value = static_cast<InstructionType>(i);
+            return;
+        }
+    }
+    throw std::invalid_argument("unknown method");
 }
 
 struct Args {
@@ -54,7 +62,19 @@ static void doit(const Args &args) {
     asmjit::CodeHolder code;
     code.init(rt.environment(), rt.cpuFeatures());
     asmjit::x86::Assembler as(&code);
-    uvfault_generate_imul(as, args.depth, args.pausedepth);
+    switch (args.method) {
+    case InstructionType::Imul:
+        uvfault_generate_imul(as, args.depth, args.pausedepth);
+        break;
+    case InstructionType::ImulImm:
+        uvfault_generate_imul_imm(as, args.depth, args.pausedepth);
+        break;
+    case InstructionType::Aesenc:
+        uvfault_generate_aesenc(as, args.depth, args.pausedepth);
+        break;
+    default:
+        throw std::invalid_argument("unsupported method");
+    }
     uvfault_fn fn;
     auto err = rt.add(&fn, &code);
     if (err)

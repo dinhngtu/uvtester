@@ -6,7 +6,9 @@
 
 using uvfault_fn = int64_t (*)(int64_t seed, uint32_t iters);
 
-void uvfault_generate_imul(asmjit::x86::Assembler &as, int mulDepth, int pauseDepth);
+void uvfault_generate_imul(asmjit::x86::Assembler &as, int depth, int pauseDepth);
+void uvfault_generate_imul_imm(asmjit::x86::Assembler &as, int depth, int pauseDepth);
+void uvfault_generate_aesenc(asmjit::x86::Assembler &as, int depth, int pauseDepth);
 
 class AsmException : std::exception {
 public:

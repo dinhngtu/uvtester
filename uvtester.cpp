@@ -20,7 +20,7 @@ struct Args {
     int depth;
     uint32_t iters;
     int pausedepth;
-    long passes;
+    long long passes;
     int sleep;
 };
 
@@ -31,7 +31,7 @@ static cxxopts::Options make_options() {
     g("depth", "faulting instruction depth per half iteration", cxxopts::value<int>()->default_value("4"));
     g("iters", "iteration count per check", cxxopts::value<uint32_t>()->default_value("100"));
     g("pausedepth", "pause depth per check", cxxopts::value<int>()->default_value("0"));
-    g("passes", "number of iterated passes per sleep", cxxopts::value<long>()->default_value("1000000000"));
+    g("passes", "number of iterated passes per sleep", cxxopts::value<long long>()->default_value("1000000000"));
     g("sleep", "sleep time in milliseconds", cxxopts::value<int>()->default_value("1"));
     return opt;
 }
@@ -52,12 +52,12 @@ void doit(const Args &args) {
         throw AsmException(err);
 
     while (1) {
-        for (int i = 0; i < args.passes; i++) {
+        for (long long i = 0; i < args.passes; i++) {
             int64_t seed;
             do {
                 seed = distr(gen);
             } while (seed >= -1 && seed <= 1);
-            auto res = fn(rand(), args.iters);
+            auto res = fn(seed, args.iters);
             if (res)
                 printf("bad result %" PRId64 "x\n", res);
         }
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
         args.depth = argm["depth"].as<int>();
         args.iters = argm["iters"].as<uint32_t>();
         args.pausedepth = argm["pausedepth"].as<int>();
-        args.passes = argm["passes"].as<long>();
+        args.passes = argm["passes"].as<long long>();
         if (args.passes < 0)
             throw std::invalid_argument("passes");
         args.sleep = argm["sleep"].as<int>();
@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
     printf("depth:\t\t%d\n", args.depth);
     printf("iters:\t\t%" PRIu32 "\n", args.iters);
     printf("pausedepth:\t%d\n", args.pausedepth);
-    printf("passes:\t\t%ld\n", args.passes);
+    printf("passes:\t\t%lld\n", args.passes);
     printf("sleep:\t\t%d\n", args.sleep);
 
     doit(args);

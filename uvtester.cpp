@@ -29,10 +29,10 @@ static cxxopts::Options make_options() {
     cxxopts::Options opt{"uvtester"};
     auto g = opt.add_options();
     g("method", "instruction type", cxxopts::value<InstructionType>()->default_value("imul"));
-    g("depth", "faulting instruction depth per half iteration", cxxopts::value<int>()->default_value("4"));
-    g("iters", "iteration count per check", cxxopts::value<uint32_t>()->default_value("10"));
-    g("pausedepth", "pause depth per check", cxxopts::value<int>()->default_value("0"));
-    g("passes", "number of iterated passes per sleep", cxxopts::value<long long>()->default_value("25000"));
+    g("depth", "faulting instruction count per half test iteration", cxxopts::value<int>()->default_value("4"));
+    g("iters", "test iteration count per sanity check pass", cxxopts::value<uint32_t>()->default_value("10"));
+    g("pausedepth", "pause count per sanity check pass", cxxopts::value<int>()->default_value("0"));
+    g("passes", "number of passes per sleep", cxxopts::value<long long>()->default_value("25000"));
     g("sleep", "sleep time in milliseconds", cxxopts::value<int>()->default_value("1"));
     g("measure", "measure time of main loops", cxxopts::value<int>()->default_value("0"));
     return opt;
@@ -53,14 +53,14 @@ void doit(const Args &args) {
     if (err)
         throw AsmException(err);
 
-    long long avg;
+    long long total;
     int loopit = 0;
     while (1) {
         std::chrono::high_resolution_clock::time_point begin;
         if (args.measure) {
             begin = std::chrono::high_resolution_clock::now();
             if (loopit % args.measure == 0)
-                avg = 0;
+                total = 0;
         }
         for (long long i = 0; i < args.passes; i++) {
             int64_t seed;
@@ -74,9 +74,9 @@ void doit(const Args &args) {
         if (args.measure) {
             auto tm = std::chrono::high_resolution_clock::now() - begin;
             auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(tm).count();
-            avg += usecs;
+            total += usecs;
             if (loopit % args.measure == args.measure - 1)
-                printf("total %lld us\n", avg);
+                printf("total %lld us (avg %lld us per main loop iter)\n", total, total / args.measure);
             loopit++;
         }
         if (args.sleep)

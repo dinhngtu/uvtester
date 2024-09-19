@@ -1,3 +1,8 @@
+[CmdletBinding()]
+param (
+    [Parameter(Position = 0, ValueFromRemainingArguments = $true)]$Arguments
+)
+
 $nativeMethodsDecl = @'
 // https://stackoverflow.com/a/6972620
 
@@ -110,7 +115,7 @@ $cores = $pi | Where-Object Relationship -eq RelationProcessorCore | Select-Obje
 
 $processes = $cores | ForEach-Object {
     Write-Host "starting tester on core mask $_"
-    $p = Start-Process $PSScriptRoot\build\uvtester.exe -PassThru
+    $p = Start-Process $PSScriptRoot\build\uvtester.exe -PassThru -ArgumentList $Arguments
     $p.ProcessorAffinity = $_
     $p
 }

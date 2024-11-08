@@ -38,6 +38,7 @@ struct Args {
     long long passes;
     int sleep;
     int measure;
+    bool stop;
 };
 
 static cxxopts::Options make_options() {
@@ -50,6 +51,7 @@ static cxxopts::Options make_options() {
     g("passes", "number of passes per sleep", cxxopts::value<long long>()->default_value("25000"));
     g("sleep", "sleep time in milliseconds", cxxopts::value<int>()->default_value("1"));
     g("measure", "measure time of main loops", cxxopts::value<int>()->default_value("0"));
+    g("stop", "stop on first failure", cxxopts::value<bool>());
     return opt;
 }
 
@@ -92,8 +94,11 @@ static void doit(const Args &args) {
         for (long long i = 0; i < args.passes; i++) {
             auto seed = distr(gen);
             auto res = fn(seed, args.iters);
-            if (res)
+            if (res) {
                 printf("bad result %" PRId64 "x\n", res);
+                if (args.stop)
+                    throw std::runtime_error("bad result detected, stopping");
+            }
         }
         if (args.measure) {
             auto tm = std::chrono::high_resolution_clock::now() - begin;
@@ -128,6 +133,7 @@ int main(int argc, char **argv) {
         args.measure = argm["measure"].as<int>();
         if (args.measure < 0)
             throw std::invalid_argument("sleep");
+        args.stop = !!argm.count("stop");
     } catch (const std::exception &ex) {
         printf("%s\n", ex.what());
         auto h = opts.help();
@@ -141,7 +147,13 @@ int main(int argc, char **argv) {
     printf("passes:\t\t%lld\n", args.passes);
     printf("sleep:\t\t%d\n", args.sleep);
     printf("measure:\t%d\n", args.measure);
+    printf("stop:\t\t%d\n", args.stop);
 
-    doit(args);
+    try {
+        doit(args);
+    } catch (const std::exception &ex) {
+        printf("%s\n", ex.what());
+        return 2;
+    }
     return 0;
 }

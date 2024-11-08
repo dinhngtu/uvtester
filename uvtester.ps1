@@ -1,3 +1,5 @@
+#Requires -Version 7.4
+
 [CmdletBinding()]
 param (
     [Parameter(Position = 0, ValueFromRemainingArguments = $true)]$Arguments
@@ -114,18 +116,35 @@ $pi = [Coremap.NativeMethods]::MyGetLogicalProcessorInformation()
 $cores = $pi | Where-Object Relationship -eq RelationProcessorCore | Select-Object -ExpandProperty ProcessorMask
 
 $processes = $cores | ForEach-Object {
-    Write-Host "starting tester on core mask $_"
-    if ($Arguments) {
-        $p = Start-Process $PSScriptRoot\build\uvtester.exe -PassThru -ArgumentList $Arguments
-    } else {
-        $p = Start-Process $PSScriptRoot\build\uvtester.exe -PassThru
+    $procargs = @{
+        FilePath    = "$PSScriptRoot\build\uvtester.exe"
+        PassThru    = $true
+        NoNewWindow = $true
     }
+    if ($Arguments) {
+        $procargs["ArgumentList"] = $Arguments
+    }
+    $p = Start-Process @procargs
     $p.ProcessorAffinity = $_
+    Add-Member -InputObject $p -MemberType NoteProperty -Name SavedAffinity -Value $_
+    Write-Host "started tester $($p.Id) on core mask $_"
     $p
 }
 
 try {
-    $processes | Wait-Process
+    while ($processes.Count -gt 0) {
+        $processes | Wait-Process -Any
+        $processes | Where-Object HasExited | ForEach-Object {
+            $p = $_
+            if ($p.ExitCode -ne 0) {
+                Write-Error "tester $($p.Id) (core mask $($p.SavedAffinity)) failed with exit code $($p.ExitCode)"
+            }
+            else {
+                Write-Host "tester $($p.Id) (core mask $($p.SavedAffinity)) finished successfully"
+            }
+        }
+        $processes = $processes | Where-Object -not HasExited
+    }
 }
 finally {
     $processes | Stop-Process -Force

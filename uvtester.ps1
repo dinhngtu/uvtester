@@ -115,7 +115,11 @@ $cores = $pi | Where-Object Relationship -eq RelationProcessorCore | Select-Obje
 
 $processes = $cores | ForEach-Object {
     Write-Host "starting tester on core mask $_"
-    $p = Start-Process $PSScriptRoot\build\uvtester.exe -PassThru -ArgumentList $Arguments
+    if ($Arguments) {
+        $p = Start-Process $PSScriptRoot\build\uvtester.exe -PassThru -ArgumentList $Arguments
+    } else {
+        $p = Start-Process $PSScriptRoot\build\uvtester.exe -PassThru
+    }
     $p.ProcessorAffinity = $_
     $p
 }
